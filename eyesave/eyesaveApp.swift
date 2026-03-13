@@ -9,9 +9,15 @@ import SwiftUI
 
 @main
 struct eyesaveApp: App {
+    @State private var timer = EyeStrainTimer()
+
     var body: some Scene {
-        WindowGroup {
-            ContentView()
+        MenuBarExtra {
+            MenuBarView(timer: timer)
+        } label: {
+            Image(systemName: timer.isPaused ? "eye.slash" : "eye")
+            Text(timer.menuBarText)
         }
+        .menuBarExtraStyle(.window)
     }
 }
