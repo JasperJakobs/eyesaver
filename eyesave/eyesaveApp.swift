@@ -16,7 +16,6 @@ struct eyesaveApp: App {
             MenuBarView(timer: timer)
         } label: {
             Image(systemName: timer.isPaused ? "eye.slash" : "eye")
-            Text(timer.menuBarText)
         }
         .menuBarExtraStyle(.window)
     }

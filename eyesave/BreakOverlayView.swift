@@ -9,79 +9,137 @@ import SwiftUI
 
 struct BreakOverlayView: View {
     var timer: EyeStrainTimer
-    @State private var ringProgress: Double = 1.0
+    @State private var borderProgress: Double = 1.0
     @State private var pulseGlow = false
     @State private var appeared = false
+    @State private var eyeBreathe = false
 
-    private let ringGradient = LinearGradient(
-        colors: [.blue, .cyan, .mint],
-        startPoint: .topLeading,
-        endPoint: .bottomTrailing
+    private let borderGradient = AngularGradient(
+        stops: [
+            .init(color: .cyan, location: 0.0),
+            .init(color: .blue, location: 0.25),
+            .init(color: .mint, location: 0.5),
+            .init(color: .cyan, location: 0.75),
+            .init(color: .blue, location: 1.0),
+        ],
+        center: .center
     )
 
     var body: some View {
-        VStack(spacing: 24) {
-            Text("Look Away")
-                .font(.title2.weight(.semibold))
+        ZStack {
+            // Deep glow behind the pill
+            Capsule()
+                .fill(.cyan.opacity(pulseGlow ? 0.12 : 0.04))
+                .blur(radius: 30)
 
-            // Countdown ring
-            ZStack {
-                // Background ring
-                Circle()
-                    .stroke(.white.opacity(0.15), lineWidth: 5)
+            // Glow border (blurred)
+            Capsule()
+                .trim(from: 0, to: borderProgress)
+                .stroke(borderGradient, style: StrokeStyle(lineWidth: 5, lineCap: .round))
+                .blur(radius: 12)
+                .opacity(pulseGlow ? 1.0 : 0.4)
+                .padding(-4)
 
-                // Glow layer
-                Circle()
-                    .trim(from: 0, to: ringProgress)
-                    .stroke(ringGradient, style: StrokeStyle(lineWidth: 8, lineCap: .round))
-                    .rotationEffect(.degrees(-90))
-                    .blur(radius: 12)
-                    .opacity(pulseGlow ? 0.9 : 0.35)
+            // Crisp border progress
+            Capsule()
+                .trim(from: 0, to: borderProgress)
+                .stroke(borderGradient, style: StrokeStyle(lineWidth: 2.5, lineCap: .round))
 
-                // Main progress ring
-                Circle()
-                    .trim(from: 0, to: ringProgress)
-                    .stroke(ringGradient, style: StrokeStyle(lineWidth: 5, lineCap: .round))
-                    .rotationEffect(.degrees(-90))
+            // Track border (dim)
+            Capsule()
+                .strokeBorder(.white.opacity(0.1), lineWidth: 1)
 
-                // Countdown number
-                Text("\(timer.breakSecondsRemaining)")
-                    .font(.system(size: 52, weight: .ultraLight, design: .rounded))
-                    .monospacedDigit()
-                    .contentTransition(.numericText(countsDown: true))
+            // Content
+            HStack(spacing: 0) {
+                // Eye icon (left)
+                ZStack {
+                    Image(systemName: "eye.fill")
+                        .font(.system(size: 18, weight: .light))
+                        .foregroundStyle(.cyan)
+                        .blur(radius: 8)
+                        .opacity(eyeBreathe ? 0.8 : 0.2)
+
+                    Image(systemName: "eye.fill")
+                        .font(.system(size: 16, weight: .light))
+                        .foregroundStyle(
+                            .linearGradient(
+                                colors: [.cyan, .blue],
+                                startPoint: .leading,
+                                endPoint: .trailing
+                            )
+                        )
+                        .scaleEffect(eyeBreathe ? 1.08 : 0.95)
+                }
+                .frame(width: 24)
+
+                Spacer()
+
+                // Countdown (center)
+                HStack(alignment: .firstTextBaseline, spacing: 3) {
+                    Text("\(timer.breakSecondsRemaining)")
+                        .font(.system(size: 24, weight: .light, design: .rounded))
+                        .monospacedDigit()
+                        .foregroundStyle(.white)
+                        .contentTransition(.numericText(countsDown: true))
+
+                    Text("s")
+                        .font(.system(size: 12, weight: .medium, design: .rounded))
+                        .foregroundStyle(.white.opacity(0.35))
+                }
+
+                Spacer()
+
+                // Skip button (right)
+                Button {
+                    timer.skipBreak()
+                } label: {
+                    Text("Skip")
+                        .font(.system(size: 12, weight: .semibold, design: .rounded))
+                        .foregroundStyle(.white.opacity(0.55))
+                        .padding(.horizontal, 14)
+                        .padding(.vertical, 6)
+                        .background(
+                            Capsule()
+                                .fill(.white.opacity(0.07))
+                                .overlay(
+                                    Capsule()
+                                        .strokeBorder(.white.opacity(0.1), lineWidth: 0.5)
+                                )
+                        )
+                }
+                .buttonStyle(.plain)
             }
-            .frame(width: 150, height: 150)
-
-            Text("Rest your eyes for a moment")
-                .font(.subheadline)
-                .foregroundStyle(.secondary)
-
-            // Skip button
-            Button {
-                timer.skipBreak()
-            } label: {
-                Text("Skip")
-                    .font(.subheadline.weight(.medium))
-                    .padding(.horizontal, 28)
-                    .padding(.vertical, 8)
-                    .background(.ultraThinMaterial, in: Capsule())
-            }
-            .buttonStyle(.plain)
+            .padding(.horizontal, 28)
+            .padding(.vertical, 16)
         }
-        .padding(.horizontal, 44)
-        .padding(.vertical, 36)
-        .glassEffect(.regular, in: .rect(cornerRadius: 28))
-        .scaleEffect(appeared ? 1.0 : 0.85)
+        .frame(width: 300, height: 62)
+        .background {
+            Capsule()
+                .fill(.black.opacity(0.55))
+                .background(.ultraThinMaterial, in: Capsule())
+                .overlay(
+                    Capsule()
+                        .strokeBorder(.white.opacity(0.12), lineWidth: 0.5)
+                )
+                .shadow(color: .black.opacity(0.4), radius: 20, y: 8)
+        }
+        .clipShape(Capsule())
+        .environment(\.colorScheme, .dark)
+        .scaleEffect(appeared ? 1.0 : 0.7)
+        .offset(y: appeared ? 0 : -12)
         .opacity(appeared ? 1.0 : 0)
         .onAppear {
             withAnimation(.spring(duration: 0.6, bounce: 0.2)) {
                 appeared = true
             }
             withAnimation(.linear(duration: 20)) {
-                ringProgress = 0
+                borderProgress = 0
             }
-            withAnimation(.easeInOut(duration: 1.8).repeatForever(autoreverses: true)) {
+            withAnimation(.easeInOut(duration: 2.0).repeatForever(autoreverses: true)) {
                 pulseGlow = true
+            }
+            withAnimation(.easeInOut(duration: 2.2).repeatForever(autoreverses: true)) {
+                eyeBreathe = true
             }
         }
     }
