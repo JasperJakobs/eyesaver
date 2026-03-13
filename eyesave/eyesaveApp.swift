@@ -16,6 +16,8 @@ struct eyesaveApp: App {
             MenuBarView(timer: timer)
         } label: {
             Image(systemName: timer.isPaused ? "eye.slash" : "eye")
+                .scaleEffect(y: timer.isBlinking ? 0.1 : 1.0)
+                .animation(.easeInOut(duration: 0.15), value: timer.isBlinking)
         }
         .menuBarExtraStyle(.window)
     }

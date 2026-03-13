@@ -132,7 +132,7 @@ struct BreakOverlayView: View {
             withAnimation(.spring(duration: 0.6, bounce: 0.2)) {
                 appeared = true
             }
-            withAnimation(.linear(duration: 20)) {
+            withAnimation(.linear(duration: timer.currentBreakTotal)) {
                 borderProgress = 0
             }
             withAnimation(.easeInOut(duration: 2.0).repeatForever(autoreverses: true)) {
